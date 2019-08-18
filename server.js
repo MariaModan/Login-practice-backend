@@ -4,13 +4,23 @@ const cors = require('cors'); //we need this so the front-end can               
 const knex = require('knex');
 const bcrypt = require('bcrypt');
 
+// const postgres = knex({
+//     client: 'pg',
+//     connection: {
+//       connectionString : process.env.DATABASE_URL,
+//       ssl: true
+//     }
+//   });
+
 const postgres = knex({
     client: 'pg',
     connection: {
-      connectionString : process.env.DATABASE_URL,
-      ssl: true
-    }
-  });
+      host : '127.0.0.1',
+      user : 'postgres',
+      password : '',
+      database : 'loginpractice'
+    }  
+})
 
 const app = express();
 
@@ -74,6 +84,57 @@ app.post('/register', (req,res) => {
     })
 })
 
+
+//this should probably be put in signin
+app.get('/todolist', (req,res) => {
+    const { email} = req.body;
+
+    postgres.select('title', 'id', 'completed').from('todolist') 
+        .where('email', '=', email)
+        .then(todo => {
+            res.json(todo)
+        })
+        .catch(err=> res.json(err))
+    
+})
+
+app.post('/addtodo', (req,res) => {
+    const{ email, title} = req.body;
+
+    postgres.insert({
+        'email': email,
+        'title': title
+    }).into('todolist').returning('title')
+    .then(title => res.json(title))
+    .catch(err=> res.json(err))
+
+})
+
+app.put('/completed', (req,res) => {
+    const { id } = req.body;
+
+    postgres.transaction( trx => {
+        trx.select('completed').from('todolist').where('id', '=', id)
+        .then( currentState => {
+            return trx('todolist').where('id', '=', id)
+            .update({
+                completed: !currentState[0].completed
+            }).returning('*')
+            .then(data => res.json(data))
+        }).then(trx.commit)
+    })
+    
+
+})
+
+app.delete('/deltodo', (req,res) => {
+    const { id } = req.body;
+
+    postgres('todolist').where('id', '=', id).del()
+        .then( response => res.json('item deleted'))
+        .catch(err => res.json(err))
+})
+
 app.listen(process.env.PORT || 3005, () => {
-    console.log(`app is running ON PORT ${process.env.port}`);
+    console.log(`app is running ON PORT ${process.env.port || 3005}`);
 })
