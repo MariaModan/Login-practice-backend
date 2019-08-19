@@ -85,7 +85,7 @@ app.post('/register', (req,res) => {
 })
 
 
-//this should probably be put in signin
+
 app.get('/todolist', (req,res) => {
     const { email} = req.body;
 
@@ -94,7 +94,7 @@ app.get('/todolist', (req,res) => {
         .then(todo => {
             res.json(todo)
         })
-        .catch(err=> res.json(err))
+        .catch(err=> res.status(400).json('unable to get todo list'))
     
 })
 
@@ -106,7 +106,7 @@ app.post('/addtodo', (req,res) => {
         'title': title
     }).into('todolist').returning('title')
     .then(title => res.json(title))
-    .catch(err=> res.json(err))
+    .catch(err=> res.status(400).json('unable to add todo'))
 
 })
 
@@ -121,7 +121,9 @@ app.put('/completed', (req,res) => {
                 completed: !currentState[0].completed
             }).returning('*')
             .then(data => res.json(data))
+            .catch( err => res.status(400).json('error toggling complete'))
         }).then(trx.commit)
+        .catch( err => res.status(400).json('unable to select todo'))
     })
     
 
@@ -132,9 +134,9 @@ app.delete('/deltodo', (req,res) => {
 
     postgres('todolist').where('id', '=', id).del()
         .then( response => res.json('item deleted'))
-        .catch(err => res.json(err))
+        .catch(err => res.json('unable to delete todo'))
 })
 
 app.listen(process.env.PORT || 3005, () => {
-    console.log(`app is running ON PORT ${process.env.port || 3005}`);
+    console.log(`app is running on PORT ${process.env.port || 3005}`);
 })
