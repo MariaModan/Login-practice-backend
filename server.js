@@ -96,7 +96,7 @@ app.post('/addtodo', (req,res) => {
         'title': title
     }).into('todolist').returning(['title','id','completed'])
     .then(newTodo => res.json(newTodo))
-    .catch(err=> res.status(400).json('unable to add todo'))
+    .catch(err=> res.status(400).json(err))
 
 })
 
