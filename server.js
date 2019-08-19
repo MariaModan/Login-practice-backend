@@ -4,23 +4,13 @@ const cors = require('cors'); //we need this so the front-end can               
 const knex = require('knex');
 const bcrypt = require('bcrypt');
 
-// const postgres = knex({
-//     client: 'pg',
-//     connection: {
-//       connectionString : process.env.DATABASE_URL,
-//       ssl: true
-//     }
-//   });
-
 const postgres = knex({
     client: 'pg',
     connection: {
-      host : '127.0.0.1',
-      user : 'postgres',
-      password : '',
-      database : 'loginpractice'
-    }  
-})
+      connectionString : process.env.DATABASE_URL,
+      ssl: true
+    }
+  });
 
 const app = express();
 
@@ -86,7 +76,7 @@ app.post('/register', (req,res) => {
 
 
 
-app.get('/todolist', (req,res) => {
+app.post('/todolist', (req,res) => {
     const { email} = req.body;
 
     postgres.select('title', 'id', 'completed').from('todolist') 
@@ -104,8 +94,8 @@ app.post('/addtodo', (req,res) => {
     postgres.insert({
         'email': email,
         'title': title
-    }).into('todolist').returning('title')
-    .then(title => res.json(title))
+    }).into('todolist').returning(['title','id','completed'])
+    .then(newTodo => res.json(newTodo))
     .catch(err=> res.status(400).json('unable to add todo'))
 
 })
